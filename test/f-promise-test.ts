@@ -22,26 +22,20 @@ const {
     throws,
 } = assert;
 
-function test(name: string, fn: () => void) {
+function test(name: string, fn: () => Promise<void>) {
     it(name, done => {
-        run(() => (fn(), undefined)).then(done, done);
+        run(fn).then(done, done);
     });
 }
 
-function delay<T>(val: T, millis?: number) {
-    return wait<T>(cb => {
-        setTimeout(() => {
-            cb(null, val);
-        }, millis || 0);
-    });
+async function delay<T>(val: T, millis?: number) {
+    await sleep(millis || 0);
+    return val;
 }
 
-function delayFail<T>(reason: any, millis?: number) {
-    return wait<T>(cb => {
-        setTimeout(() => {
-            cb(new Error(`reason: ${reason}`));
-        }, millis || 0);
-    });
+async function delayFail<T>(reason: any, millis?: number) {
+    await sleep(millis || 0);
+    throw new Error(`reason: ${reason}`);
 }
 
 function sum(array: (number | undefined)[]): number {
@@ -49,18 +43,18 @@ function sum(array: (number | undefined)[]): number {
 }
 
 process.on('unhandledRejection', err => {
-    fail(`Unhandled rejected promise: ${err.stack}`);
+    fail(`Unhandled rejected promise: ${(err as any)?.stack || err}`);
 });
 
 describe('wait', () => {
     it('promise wait with success', done => {
-        const p = run(() => {
+        const p = run(async () => {
             const fname = fsp.join(__dirname, '../../test/f-promise-test.ts');
-            const text = wait(mzfs.readFile(fname, 'utf8'));
+            const text = await wait(mzfs.readFile(fname, 'utf8'));
             typeOf(text, 'string');
             ok(text.length > 200);
             ok(text.indexOf('// tslint') === 0);
-            const text2 = wait(mzfs.readFile(fname, 'utf8'));
+            const text2 = await wait(mzfs.readFile(fname, 'utf8'));
             equal(text, text2);
             return 'success';
         });
@@ -70,9 +64,9 @@ describe('wait', () => {
         }, done);
     });
     it('promise wait with error', done => {
-        const p = run(() => {
+        const p = run(async () => {
             const fname = fsp.join(__dirname, '../../test/f-promise-test.ts.not.exist');
-            wait(mzfs.readFile(fname, 'utf8'));
+            await wait(mzfs.readFile(fname, 'utf8'));
         });
         p.then(
             result => {
@@ -85,13 +79,13 @@ describe('wait', () => {
         );
     });
     it('callback wait with success', done => {
-        const p = run(() => {
+        const p = run(async () => {
             const fname = fsp.join(__dirname, '../../test/f-promise-test.ts');
-            const text = wait<string>(cb => fs.readFile(fname, 'utf8', cb));
+            const text = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
             typeOf(text, 'string');
             ok(text.length > 200);
             ok(text.indexOf('// tslint') === 0);
-            const text2 = wait<string>(cb => fs.readFile(fname, 'utf8', cb));
+            const text2 = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
             equal(text, text2);
             return 'success';
         });
@@ -101,9 +95,9 @@ describe('wait', () => {
         }, done);
     });
     it('callback wait with error', done => {
-        const p = run(() => {
+        const p = run(async () => {
             const fname = fsp.join(__dirname, '../../test/f-promise-test.ts.not.exist');
-            wait<string>(cb => fs.readFile(fname, 'utf8', cb));
+            await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
         });
         p.then(
             result => {
@@ -116,47 +110,43 @@ describe('wait', () => {
         );
     });
     it('wait into a callback wait', done => {
-        const p = run(() => {
-            wait(cb => {
-                wait(_cb => process.nextTick(_cb));
+        const p = run(async () => {
+            await wait(async cb => {
+                await wait(_cb => process.nextTick(_cb));
                 cb(null, null);
             });
         });
         p.then(done, done);
     });
-    it('wait throws without run', done => {
-        throws(() => wait(_cb => process.nextTick(_cb)), 'cannot wait: no fiber');
-        done();
-    });
 });
 
 describe('queue', () => {
-    test('queue overflow', () => {
+    test('queue overflow', async () => {
         const queue = new Queue<number>(2);
         // must produce and consume in parallel to avoid deadlock
-        const produce = run(() => {
-            queue.write(4);
-            queue.write(9);
-            queue.write(16);
-            queue.write(25);
+        const produce = run(async () => {
+            await queue.write(4);
+            await queue.write(9);
+            await queue.write(16);
+            await queue.write(25);
         });
-        const consume = run(() => {
-            strictEqual(queue.read(), 4);
-            strictEqual(queue.read(), 9);
-            strictEqual(queue.read(), 16);
-            strictEqual(queue.read(), 25);
+        const consume = run(async () => {
+            strictEqual(await queue.read(), 4);
+            strictEqual(await queue.read(), 9);
+            strictEqual(await queue.read(), 16);
+            strictEqual(await queue.read(), 25);
         });
-        wait(produce);
-        wait(consume);
+        await wait(produce);
+        await wait(consume);
         strictEqual(queue.peek(), undefined);
     });
 
-    test('queue length, contents, alter', () => {
+    test('queue length, contents, alter', async () => {
         const queue = new Queue<number>();
-        queue.write(4);
-        queue.write(9);
-        queue.write(16);
-        queue.write(25);
+        await queue.write(4);
+        await queue.write(9);
+        await queue.write(16);
+        await queue.write(25);
         strictEqual(queue.length, 4);
         strictEqual(queue.peek(), 4);
         deepEqual(queue.contents(), [4, 9, 16, 25]);
@@ -164,42 +154,42 @@ describe('queue', () => {
             return [arr[3], arr[1]];
         });
         strictEqual(queue.peek(), 25);
-        strictEqual(queue.read(), 25);
+        strictEqual(await queue.read(), 25);
         strictEqual(queue.peek(), 9);
-        strictEqual(queue.read(), 9);
+        strictEqual(await queue.read(), 9);
         strictEqual(queue.peek(), undefined);
     });
 
-    test('queue not allow concurrent read', () => {
+    test('queue not allow concurrent read', async () => {
         const queue = new Queue<number>(2);
 
-        const consumer1 = run(() => {
-            strictEqual(queue.read(), 4);
+        const consumer1 = run(async () => {
+            strictEqual(await queue.read(), 4);
         });
-        const consumer2 = run<Error>(() => {
-            queue.read();
+        const consumer2 = run<Error>(async () => {
+            await queue.read();
             return new Error('test failed');
         }).catch(e => e);
-        queue.write(4);
+        await queue.write(4);
 
-        wait(consumer1);
-        assert.equal(wait(consumer2).message, 'already getting');
+        await wait(consumer1);
+        assert.equal((await wait(consumer2)).message, 'already getting');
     });
 });
 
 describe('handshake', () => {
-    test('notify without wait', () => {
+    test('notify without wait', async () => {
         const hk = handshake();
         hk.notify();
         hk.notify();
     });
-    test('wait then notify', () => {
+    test('wait then notify', async () => {
         const hk = handshake();
         let counter = 0;
 
         function runSleepAndCount() {
-            run(() => {
-                sleep(10);
+            run(async () => {
+                await sleep(10);
                 counter++;
                 hk.notify();
             });
@@ -207,66 +197,66 @@ describe('handshake', () => {
 
         equal(counter, 0);
         runSleepAndCount();
-        hk.wait();
+        await hk.wait();
         equal(counter, 1);
         runSleepAndCount();
-        hk.wait();
+        await hk.wait();
         equal(counter, 2);
     });
-    test('multiple wait fails', () => {
+    test('multiple wait fails', async () => {
         const hk = handshake();
         let thrown = false;
         function runAndWait() {
-            run(() => {
-                hk.wait();
+            run(async () => {
+                await hk.wait();
             }).catch(e => {
                 thrown = true;
             });
         }
         runAndWait();
         runAndWait();
-        sleep(10);
+        await sleep(10);
         hk.notify(); // release not thrown run
         equal(thrown, true);
     });
 });
 
 describe('funnel', () => {
-    test('less concurrency than allowed', () => {
+    test('less concurrency than allowed', async () => {
         const fun = funnel(4);
         const begin = Date.now();
-        const results = map<number, number | undefined>([10, 10], timeToSleep => {
-            return fun<number>(() => {
-                sleep(timeToSleep);
+        const results = await map<number, number | undefined>([10, 10], async timeToSleep => {
+            return fun<number>(async () => {
+                await sleep(timeToSleep);
                 return 1;
             });
         });
         equal(sum(results), 2);
         closeTo(Date.now() - begin, 10, 4);
     });
-    test('more concurrency than allowed', () => {
+    test('more concurrency than allowed', async () => {
         const fun = funnel(2);
         const begin = Date.now();
-        const results = map<number, number | undefined>([10, 10, 10, 10], timeToSleep => {
-            return fun<number>(() => {
-                sleep(timeToSleep);
+        const results = await map<number, number | undefined>([10, 10, 10, 10], timeToSleep => {
+            return fun<number>(async () => {
+                await sleep(timeToSleep);
                 return 1;
             });
         });
         equal(sum(results), 4);
         closeTo(Date.now() - begin, 20, 8);
     });
-    test('close funnel access', () => {
+    test('close funnel access', async () => {
         const fun = funnel(1);
         const begin = Date.now();
-        run(() => {
-            sleep(15);
+        run(async () => {
+            await sleep(15);
             fun.close();
         });
-        const results = map<number, number>([10, 10, 10, 10], timeToSleep => {
+        const results = await map<number, number>([10, 10, 10, 10], async timeToSleep => {
             try {
-                return fun<number>(() => {
-                    sleep(timeToSleep);
+                return await fun<number>(async () => {
+                    await sleep(timeToSleep);
                     return 1;
                 });
             } catch (err) {
@@ -285,41 +275,43 @@ describe('contexts', () => {
         equal(context(), mainCx);
     });
     it('is main inside run', done => {
-        run(() => {
+        run(async () => {
             equal(context(), mainCx);
         }).then(done, done);
     });
     it('is scoped inside withContext', done => {
         const cx = {};
-        run(() => {
+        run(async () => {
             equal(context(), mainCx);
-            withContext(() => {
+            await withContext(async () => {
                 equal(context(), cx);
             }, cx);
             equal(context(), mainCx);
         }).then(done, done);
     });
 
-    test('contexts', () => {
-        function testContext(x: number) {
-            return withContext(() => {
-                const y = delay(2 * x);
-                strictEqual(y, 2 * context<number>());
-                return y + 1;
-            }, x);
-        }
+    it('contexts', done => {
+        run(async () => {
+            function testContext(x: number) {
+                return withContext(async () => {
+                    const y = await delay(2 * x);
+                    strictEqual(y, 2 * context<number>());
+                    return y + 1;
+                }, x);
+            }
 
-        isObject(context());
-        const promises = [run(() => testContext(3)), run(() => testContext(5))];
-        deepEqual(promises.map(wait), [7, 11]);
-        isObject(context());
+            isObject(context());
+            const promises = [run(async () => await testContext(3)), run(async () => await testContext(5))];
+            deepEqual(await Promise.all(promises), [7, 11]);
+            isObject(context());
+        }).then(done, done);
     });
 });
 
 describe('collection functions', () => {
     it('map', done => {
-        run(() => {
-            deepEqual(map([2, 5], delay), [2, 5]);
+        run(async () => {
+            deepEqual(await map([2, 5], delay), [2, 5]);
             return 'success';
         }).then(result => {
             equal(result, 'success');
@@ -328,8 +320,8 @@ describe('collection functions', () => {
     });
 
     it('map with error', done => {
-        run(() => {
-            map([2, 5], delayFail);
+        run(async () => {
+            await map([2, 5], delayFail);
             fail();
         })
             .then(_ => fail())
@@ -342,7 +334,7 @@ describe('collection functions', () => {
 
 describe('canWait', () => {
     it('true inside run', done => {
-        run(() => {
+        run(async () => {
             ok(canWait());
             return 'success';
         }).then(result => {
@@ -360,7 +352,7 @@ describe('eventHandler', () => {
         setTimeout(
             eventHandler(() => {
                 ok(canWait());
-                done();
+                setImmediate(done);
             }),
             0,
         );
@@ -374,21 +366,21 @@ describe('eventHandler', () => {
     it('outside run', done => {
         notOk(canWait());
         let sync = true;
-        eventHandler((arg: string) => {
+        eventHandler(async (arg: string) => {
             equal(arg, 'hello', 'arg ok');
-            wait<void>(cb => setTimeout(cb, 0));
+            await wait<void>(cb => setTimeout(cb, 0));
             equal(sync, false, 'new fiber');
             done();
         })('hello');
         sync = false;
     });
     it('inside run', done => {
-        run(() => {
+        run(async () => {
             let sync = true;
             ok(canWait());
-            eventHandler((arg: string) => {
+            await eventHandler(async (arg: string) => {
                 equal(arg, 'hello', 'arg ok');
-                wait<void>(cb => setTimeout(cb, 0));
+                await wait<void>(cb => setTimeout(cb, 0));
                 equal(sync, true, 'same fiber as run');
                 done();
             })('hello');
@@ -407,10 +399,10 @@ describe('eventHandler', () => {
         })();
     });
     it('preserves context if already inside run', done => {
-        run(() => {
+        run(async () => {
             ok(canWait());
             const cx = {};
-            withContext(() => {
+            withContext(async () => {
                 eventHandler(() => {
                     equal(context(), cx);
                     done();

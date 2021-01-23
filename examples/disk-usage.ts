@@ -2,20 +2,20 @@ import * as fs from 'mz/fs';
 import { join } from 'path';
 import { run, wait } from '..';
 
-function diskUsage(dir: string): number {
-    return wait(fs.readdir(dir)).reduce((size, name) => {
+async function diskUsage(dir: string): Promise<number> {
+    return (await wait(fs.readdir(dir))).reduce(async (size: Promise<number>, name) => {
         const sub = join(dir, name);
-        const stat = wait(fs.stat(sub));
-        if (stat.isDirectory()) return size + diskUsage(sub);
-        else if (stat.isFile()) return size + stat.size;
+        const stat = await wait(fs.stat(sub));
+        if (stat.isDirectory()) return await size + (await diskUsage(sub));
+        else if (stat.isFile()) return await size + stat.size;
         else return size;
-    }, 0);
+    }, Promise.resolve(0));
 }
 
-function printDiskUsage(dir: string) {
-    console.log(`${dir}: ${diskUsage(dir)}`);
+async function printDiskUsage(dir: string) {
+    console.log(`${dir}: ${await diskUsage(dir)}`);
 }
 
-run(() => printDiskUsage(process.cwd())).catch(err => {
+run(async () => await printDiskUsage(process.cwd())).catch(err => {
     console.error(err.stack);
 });

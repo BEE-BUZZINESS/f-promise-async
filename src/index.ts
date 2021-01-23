@@ -1,7 +1,22 @@
-const fibers = require('fibers');
+import { AsyncLocalStorage } from 'async_hooks';
+
+interface RunLocalStorage {
+    _20c7abceb95c4eb88b7ca1895b1170d2: {
+        runId: number;
+        context: any;
+    }
+}
+const asyncLocalStorage = new AsyncLocalStorage<RunLocalStorage>();
+const globalContext = {};
+let runIdCounter = 0;
 
 export type Callback<T> = (err: any, result?: T) => void;
 export type Thunk<T> = (cb: Callback<T>) => void;
+
+export let PromiseConsturctor = Promise;
+export function setPromiseConstructor(f: PromiseConstructor) {
+     PromiseConsturctor = f;
+}
 
 ///
 /// ## run/wait
@@ -15,73 +30,45 @@ export type Thunk<T> = (cb: Callback<T>) => void;
 ///   * `result = wait(promise/callback)` encapsulate promise or callback.
 ///     Concretely, the fiber is suspended while the asynchronous task is not finished, then it resumes.
 ///     As many `wait()` as needed may be used in a run.
-export let wait = <T = any>(promiseOrCallback: Promise<T> | Thunk<T>): T => {
-    const fiber = fibers.current;
-    if (!fiber) throw new Error('cannot wait: no fiber');
+/**
+ * Usefull for callback wait.
+ * Can be call outside run !
+ * @param promiseOrCallback
+ */
+export async function wait<T = any>(promiseOrCallback: Promise<T> | Thunk<T>): Promise<T> {
     if (typeof promiseOrCallback === 'function') {
-        promiseOrCallback((err, res) => {
-            process.nextTick(() => {
-                let cx = globals.context;
-                try {
-                    if (err) {
-                        fiber.throwInto(err);
-                    } else {
-                        fiber.run(res);
-                    }
-                } finally {
-                    globals.context = cx;
-                    cx = null;
+        return new PromiseConsturctor<T>((resolve, reject) => {
+            promiseOrCallback((err: Error | undefined, result: T) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(result);
                 }
             });
         });
     } else {
-        promiseOrCallback
-            .then(res => {
-                let cx = globals.context;
-                try {
-                    fiber.run(res);
-                } finally {
-                    globals.context = cx;
-                    cx = null;
-                }
-            })
-            .catch(e => {
-                let cx = globals.context;
-                try {
-                    fiber.throwInto(e);
-                } finally {
-                    globals.context = cx;
-                    cx = null;
-                }
-            });
+        return promiseOrCallback;
     }
-    let cx = globals.context;
-    try {
-        return fibers.yield();
-    } catch (e) {
-        throw (fullStackError && fullStackError(e)) || e;
-    } finally {
-        globals.context = cx;
-        cx = null;
-    }
-};
+}
 
-export let run = <T>(fn: () => T): Promise<T> => {
+/**
+ * Start fake coroutine, with his own local storage
+ * @param fn
+ */
+export async function run<T>(fn: () => Promise<T>): Promise<T> {
     if (typeof fn !== 'function') {
         throw new Error('run() should take a function as argument');
     }
-    return new Promise((resolve, reject) => {
-        const cx = globals.context;
-        fibers(() => {
-            try {
-                resolve(fn());
-            } catch (e) {
-                reject((cleanFiberStack && cleanFiberStack(e)) || e);
-            }
-        }).run();
-        globals.context = cx;
-    });
-};
+    const runId = ++runIdCounter;
+    const parentStorage = asyncLocalStorage.getStore() || { _20c7abceb95c4eb88b7ca1895b1170d2: { context: globalContext } } as RunLocalStorage;
+    try {
+        return await asyncLocalStorage.run({ _20c7abceb95c4eb88b7ca1895b1170d2: { runId, context: parentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context } }, fn);
+    } finally {
+        if (!parentStorage._20c7abceb95c4eb88b7ca1895b1170d2.runId) {
+            asyncLocalStorage.disable();
+        }
+    }
+}
 
 // goodies
 
@@ -121,11 +108,11 @@ export function funnel(max = -1): Funnel {
     let active = 0;
     let closed = false;
 
-    function tryEnter<T>(fn: () => T): T {
+    async function tryEnter<T>(fn: () => Promise<T>): Promise<T> {
         if (active < _max) {
             active++;
             try {
-                return fn();
+                return await fn();
             } finally {
                 active--;
                 const hk = queue.shift();
@@ -138,10 +125,10 @@ export function funnel(max = -1): Funnel {
         }
     }
 
-    function overflow<T>(fn: () => T): T {
+    async function overflow<T>(fn: () => Promise<T>): Promise<T> {
         const hk = handshake();
         queue.push(hk);
-        hk.wait();
+        await hk.wait();
         if (closed) {
             throw new Error(`cannot execute: funnel has been closed`);
         }
@@ -150,7 +137,7 @@ export function funnel(max = -1): Funnel {
         return tryEnter<T>(fn);
     }
 
-    const fun = function<T>(fn: () => T): T {
+    const fun = function<T>(fn: () => Promise<T>): Promise<T> {
         if (closed) {
             throw new Error(`cannot execute: funnel has been closed`);
         }
@@ -172,7 +159,7 @@ export function funnel(max = -1): Funnel {
 (funnel as any).defaultSize = 4;
 
 export interface Funnel {
-    <T>(fn: () => T): T;
+    <T>(fn: () => Promise<T>): Promise<T>;
     close(): void;
 }
 
@@ -184,11 +171,11 @@ export interface Funnel {
 ///   `hs.wait()`: waits until `hs` is notified.
 ///   `hs.notify()`: notifies `hs`.
 ///   Note: `wait` calls are not queued. An exception is thrown if wait is called while another `wait` is pending.
-export function handshake<T = void>() {
+export function handshake<T = void>(): Handshake<T> {
     let callback: Callback<T> | undefined = undefined,
         notified = false;
     return {
-        wait() {
+        async wait(): Promise<T> {
             return wait<T>((cb: Callback<T>) => {
                 if (callback) throw new Error('already waiting');
                 if (notified) setImmediate(cb);
@@ -205,7 +192,7 @@ export function handshake<T = void>() {
 }
 
 export interface Handshake<T = void> {
-    wait(): void;
+    wait(): Promise<T>;
     notify(): void;
 }
 
@@ -233,7 +220,7 @@ export class Queue<T> {
         this._max = options.max != null ? options.max : -1;
     }
     ///   `data = q.read()`:  dequeue and returns the first item. Waits if the queue is empty. Does not allow concurrent read.
-    read() {
+    async read(): Promise<T> {
         return wait<T>((cb: Callback<T>) => {
             if (this._callback) throw new Error('already getting');
             if (this._q.length > 0) {
@@ -255,7 +242,7 @@ export class Queue<T> {
         });
     }
     ///   `q.write(data)`:  queues an item. Waits if the queue is full.
-    write(item: T | undefined) {
+    async write(item: T | undefined): Promise<T> {
         return wait<T>((cb: Callback<T>) => {
             if (this.put(item)) {
                 setImmediate(() => {
@@ -310,19 +297,25 @@ export class Queue<T> {
 ///   wraps a function so that it executes with context `cx` (or a wrapper around current context if `cx` is falsy).
 ///   The previous context will be restored when the function returns (or throws).
 ///   returns the wrapped function.
-export function withContext<T>(fn: () => T, cx: any): T {
-    if (!fibers.current) throw new Error('withContext(fn) not allowed outside run()');
-    const oldContext = globals.context;
-    globals.context = cx || Object.create(oldContext);
+export async function withContext<T>(fn: () => Promise<T>, cx: any): Promise<T> {
+    const currentStorage = asyncLocalStorage.getStore() || { _20c7abceb95c4eb88b7ca1895b1170d2: { context: globalContext } } as RunLocalStorage;
+    const currentContext = currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context;
     try {
-        return fn();
+        currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context = cx;
+        return await fn();
     } finally {
-        globals.context = oldContext;
+        currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context = currentContext;
     }
 }
 
 export function context<T = any>(): T {
-    return globals.context;
+    const currentStorage = asyncLocalStorage.getStore() || { _20c7abceb95c4eb88b7ca1895b1170d2: { context: globalContext } } as RunLocalStorage;
+    return currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context;
+}
+
+export function runId<T = any>(): number | undefined {
+    const currentStorage = asyncLocalStorage.getStore() || { _20c7abceb95c4eb88b7ca1895b1170d2: { context: globalContext } } as RunLocalStorage;
+    return currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.runId;
 }
 
 ///
@@ -330,26 +323,24 @@ export function context<T = any>(): T {
 ///
 /// * `results = map(collection, fn)`
 ///   creates as many coroutines with `fn` as items in `collection` and wait for them to finish to return result array.
-export function map<T, R>(collection: T[], fn: (val: T) => R) {
-    return wait(
-        Promise.all(
-            collection.map(item => {
-                return run(() => fn(item));
-            }),
-        ),
+export async function map<T, R>(collection: T[], fn: (val: T) => Promise<R>): Promise<R[]> {
+    return Promise.all(
+        collection.map(async item => {
+            return run(() => fn(item));
+        }),
     );
 }
 
 /// * `sleep(ms)`
 ///   suspends current coroutine for `ms` milliseconds.
-export function sleep(n: number): void {
-    wait(cb => setTimeout(cb, n));
+export async function sleep(n: number): Promise<void> {
+    return wait(cb => setTimeout(cb, n));
 }
 
 /// * `ok = canWait()`
 ///   returns whether `wait` calls are allowed (whether we are called from a `run`).
 export function canWait() {
-    return !!fibers.current;
+    return (runId() || -1) > 0;
 }
 
 /// * `wrapped = eventHandler(handler)`
@@ -357,11 +348,11 @@ export function canWait() {
 ///   the wrapped handler will execute on the current fiber if canWait() is true.
 ///   otherwise it will be `run` on a new fiber (without waiting for its completion)
 export function eventHandler<T extends Function>(handler: T): T {
-    const wrapped = function(this: any, ...args: any[]) {
+    const wrapped = async function(this: any, ...args: any[]) {
         if (canWait()) {
-            handler.apply(this, args);
+            await handler.apply(this, args);
         } else {
-            run(() => withContext(() => handler.apply(this, args), {})).catch(err => {
+            await run(() => withContext(() => handler.apply(this, args), {})).catch(err => {
                 console.error(err);
             });
         }
@@ -369,145 +360,4 @@ export function eventHandler<T extends Function>(handler: T): T {
     // preserve arity
     Object.defineProperty(wrapped, 'length', { value: handler.length });
     return wrapped;
-}
-
-// private
-
-declare const global: any;
-const secret = '_20c7abceb95c4eb88b7ca1895b1170d1';
-const globals = (global[secret] = global[secret] || { context: {} });
-
-// Those functions are conditionally assigned bellow.
-let fullStackError: ((e: Error) => Error) | undefined;
-let cleanFiberStack: ((e: Error) => Error) | undefined;
-
-let cannotOverrideStackWarned = false;
-function overrideStack(e: Error, getFn: (this: Error) => string) {
-    try {
-        Object.defineProperty(e, 'stack', {
-            get: getFn,
-            enumerable: true,
-            configurable: true,
-        });
-    } catch (e) {
-        if (!cannotOverrideStackWarned) {
-            console.warn(`[F-PROMISE] attempt to override e.stack failed (warning will not be repeated)`);
-            cannotOverrideStackWarned = true;
-        }
-    }
-}
-
-/// ## Error stack traces
-///
-/// Three policies:
-/// * `fast`: stack traces are not changed. Call history might be difficult to read; cost less.
-/// * `whole`: stack traces due to async tasks errors in `wait()` are concatenate with the current coroutine stack.
-///   This allow to have a complete history call (including f-promise traces).
-/// * default: stack traces are like `whole` policy, but clean up to remove f-promise noise.
-///
-/// The policy can be set with `FPROMISE_STACK_TRACES` environment variable.
-/// Any value other than `fast` and `whole` are consider as default policy.
-if (process.env.FPROMISE_STACK_TRACES === 'whole') {
-    fullStackError = function fullStackError(e: Error) {
-        if (!(e instanceof Error)) {
-            return e;
-        }
-        const localError = new Error('__fpromise');
-        const fiberStack = e.stack || '';
-        overrideStack(e, function() {
-            const localStack = localError ? localError.stack || '' : '';
-            return fiberStack + localStack;
-        });
-        return e;
-    };
-} else if (process.env.FPROMISE_STACK_TRACES !== 'fast') {
-    fullStackError = function fullStackError(e: Error) {
-        if (!(e instanceof Error)) {
-            return e;
-        }
-        const localError = new Error('__f-promise');
-        const fiberStack = e.stack || '';
-        overrideStack(e, function() {
-            const localStack = localError ? localError.stack || '' : '';
-            return (
-                fiberStack +
-                '\n' +
-                localStack
-                    .split('\n')
-                    .slice(1)
-                    .filter(line => {
-                        return !/\/f-promise\//.test(line);
-                    })
-                    .join('\n')
-            );
-        });
-        return e;
-    };
-
-    cleanFiberStack = function cleanFiberStack(e: Error) {
-        if (!(e instanceof Error)) {
-            return e;
-        }
-        const fiberStack = e.stack || '';
-        overrideStack(e, function() {
-            return fiberStack
-                .split('\n')
-                .filter(line => {
-                    return !/\/f-promise\//.test(line);
-                })
-                .join('\n');
-        });
-        return e;
-    };
-}
-
-// little goodie to improve V8 debugger experience
-// The debugger hangs if Fiber.yield is called when evaluating expressions at a breakpoint
-// So we monkey patch wait to throw an exception if it detects this special situation.
-if (process.execArgv.find(str => str.startsWith('--inspect-brk'))) {
-    // Unfortunately, there is no public API to check if we are called from a breakpoint.
-    // There is a C++ API (context->IsDebugEvaluateContext()) to test this
-    // but unfortunately this is an internal V8 API.
-    // This test is the best workaround I have found.
-    const isDebugEval = () => (new Error().stack || '').indexOf('.remoteFunction (<anonymous>') >= 0;
-
-    const oldWait = wait;
-
-    const flushDelayed = () => {
-        if (fibers.current.delayed) {
-            const delayed = fibers.current.delayed;
-            fibers.current.delayed = undefined;
-            for (const arg of delayed) {
-                try {
-                    oldWait(arg);
-                } catch (err) {
-                    console.error(`delayed 'wait' call failed: ${err.message}`);
-                }
-            }
-        }
-    };
-
-    // Why throw string (from bjouhier)
-    // I think I threw a string rather than an Error object because
-    // I did not want to clutter the debugger with error objects.
-    // There was also a memory issue here: debugger allocating a lot
-    // of Error objects and stack trace captures vs. a string literal
-    // which does not require any dynamic memory allocation.
-    wait = <T>(arg: Promise<T> | Thunk<T>): T => {
-        if (isDebugEval()) {
-            if (!fibers.current.delayed) fibers.current.delayed = [];
-            fibers.current.delayed.push(arg);
-            // tslint:disable-next-line:no-string-throw
-            throw 'would yield';
-        }
-        flushDelayed();
-        return oldWait(arg);
-    };
-    const oldRun = run;
-    run = <T>(fn: () => T): Promise<T> => {
-        // tslint:disable-next-line:no-string-throw
-        if (isDebugEval()) throw 'would start a fiber';
-        else return oldRun(fn);
-    };
-    console.log('Running with f-promise debugger hooks');
 }
