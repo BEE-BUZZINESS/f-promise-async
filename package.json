@@ -24,7 +24,6 @@
     "typescript": "^4.1.3"
   },
   "keywords": [
-    "fibers",
     "coroutine",
     "async",
     "promise"
@@ -37,5 +36,6 @@
     "prepare": "rm -rf build && tsc && tsc --target ES2015 --module commonjs --outDir build examples/disk-usage-async-await.ts",
     "test": "mocha build/test --async-stack-traces",
     "lint": "tslint -e 'node_modules/**' -p ."
-  }
+  },
+  "dependencies": {}
 }

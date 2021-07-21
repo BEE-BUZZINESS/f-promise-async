@@ -4,7 +4,7 @@ interface RunLocalStorage {
     _20c7abceb95c4eb88b7ca1895b1170d2: {
         runId: number;
         context: any;
-    }
+    };
 }
 const asyncLocalStorage = new AsyncLocalStorage<RunLocalStorage>();
 const globalContext = {};
@@ -13,6 +13,7 @@ let runIdCounter = 0;
 export type Callback<T> = (err: any, result?: T) => void;
 export type Thunk<T> = (cb: Callback<T>) => void;
 
+// tslint:disable-next-line:variable-name
 export let PromiseConsturctor = Promise;
 export function setPromiseConstructor(f: PromiseConstructor) {
      PromiseConsturctor = f;
@@ -21,15 +22,12 @@ export function setPromiseConstructor(f: PromiseConstructor) {
 ///
 /// ## run/wait
 /// * `promise = run(() => { wait(promise/callback); ... })`
-///    create a coroutine to write asynchronous code in a synchronous way.
+///    create a fake coroutine to write asynchronous code in a asynchronous way !
+///    keep that methode to ease f-promise conversion to async/await
+///    but also for global context
 ///
-/// All the job is done by fibers library.
-/// Those two functions are the core, others are goodies:
-///   * `promise = run(fn)` create a coroutine.
-///     This start a fiber, which is stopped when `fn` returns.
-///   * `result = wait(promise/callback)` encapsulate promise or callback.
-///     Concretely, the fiber is suspended while the asynchronous task is not finished, then it resumes.
-///     As many `wait()` as needed may be used in a run.
+///   * `promise = run(fn)` create a fake coroutine.
+///   * `result = await wait(promise/callback)` encapsulate callback.
 /**
  * Usefull for callback wait.
  * Can be call outside run !
@@ -83,7 +81,7 @@ export async function run<T>(fn: () => Promise<T>): Promise<T> {
 /// var myFunnel = funnel(10); // create a funnel that only allows 10 concurrent executions.
 ///
 /// // elsewhere
-/// myFunnel(function() { /* code with at most 10 concurrent executions */ });
+/// myFunnel(async function() { /* code with at most 10 concurrent executions */ });
 /// ```
 ///
 /// The `funnel` function can also be used to implement critical sections. Just set funnel's `max` parameter to 1.
@@ -168,7 +166,7 @@ export interface Funnel {
 /// * `hs = handshake()`
 ///   allocates a simple semaphore that can be used to do simple handshakes between two tasks.
 ///   The returned handshake object has two methods:
-///   `hs.wait()`: waits until `hs` is notified.
+///   `await hs.wait()`: waits until `hs` is notified.
 ///   `hs.notify()`: notifies `hs`.
 ///   Note: `wait` calls are not queued. An exception is thrown if wait is called while another `wait` is pending.
 export function handshake<T = void>(): Handshake<T> {
@@ -219,7 +217,7 @@ export class Queue<T> {
         options = options || {};
         this._max = options.max != null ? options.max : -1;
     }
-    ///   `data = q.read()`:  dequeue and returns the first item. Waits if the queue is empty. Does not allow concurrent read.
+    ///   `data = await q.read()`:  dequeue and returns the first item. Waits if the queue is empty. Does not allow concurrent read.
     async read(): Promise<T> {
         return wait<T>((cb: Callback<T>) => {
             if (this._callback) throw new Error('already getting');
@@ -241,7 +239,7 @@ export class Queue<T> {
             }
         });
     }
-    ///   `q.write(data)`:  queues an item. Waits if the queue is full.
+    ///   `await q.write(data)`:  queues an item. Waits if the queue is full.
     async write(item: T | undefined): Promise<T> {
         return wait<T>((cb: Callback<T>) => {
             if (this.put(item)) {
@@ -293,7 +291,7 @@ export class Queue<T> {
 ///
 /// ## Continuation local storage (CLS)
 ///
-/// * `result = withContext(fn, cx)`
+/// * `result = await withContext(fn, cx)`
 ///   wraps a function so that it executes with context `cx` (or a wrapper around current context if `cx` is falsy).
 ///   The previous context will be restored when the function returns (or throws).
 ///   returns the wrapped function.
@@ -313,7 +311,7 @@ export function context<T = any>(): T {
     return currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.context;
 }
 
-export function runId<T = any>(): number | undefined {
+export function runId(): number | undefined {
     const currentStorage = asyncLocalStorage.getStore() || { _20c7abceb95c4eb88b7ca1895b1170d2: { context: globalContext } } as RunLocalStorage;
     return currentStorage._20c7abceb95c4eb88b7ca1895b1170d2.runId;
 }
@@ -321,7 +319,7 @@ export function runId<T = any>(): number | undefined {
 ///
 /// ## Miscellaneous
 ///
-/// * `results = map(collection, fn)`
+/// * `results = await map(collection, fn)`
 ///   creates as many coroutines with `fn` as items in `collection` and wait for them to finish to return result array.
 export async function map<T, R>(collection: T[], fn: (val: T) => Promise<R>): Promise<R[]> {
     return Promise.all(
@@ -331,7 +329,7 @@ export async function map<T, R>(collection: T[], fn: (val: T) => Promise<R>): Pr
     );
 }
 
-/// * `sleep(ms)`
+/// * `await sleep(ms)`
 ///   suspends current coroutine for `ms` milliseconds.
 export async function sleep(n: number): Promise<void> {
     return wait(cb => setTimeout(cb, n));
@@ -339,6 +337,7 @@ export async function sleep(n: number): Promise<void> {
 
 /// * `ok = canWait()`
 ///   returns whether `wait` calls are allowed (whether we are called from a `run`).
+///   not realy applicable since no fibers usage anymore
 export function canWait() {
     return (runId() || -1) > 0;
 }

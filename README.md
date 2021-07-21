@@ -1,9 +1,9 @@
 # f-promise
 
-Promise-oriented coroutines for node.js.
+Legacy Promise-oriented coroutines for node.js.
 
 ```sh
-npm install f-promise
+npm install f-promise-async
 ```
 
 ## API
@@ -94,15 +94,11 @@ TypeScript is fully supported.
 
 ## Callbacks support
 
-You can also use `f-promise` with callback APIs. 
+You can also use `f-promise-async` with callback APIs. 
 So you don't absolutely need wrappers like `mz/fs`, you can directly call node's `fs` API:
 
 ```javascript
-import { wait } from 'f-promise';
-
-// promise style
-import * as mzfs from 'mz/fs';
-const readdir = path => wait(mzfs.readdir(path));
+import { wait } from 'f-promise-async';
 
 // callback style
 import * as fs from 'fs';

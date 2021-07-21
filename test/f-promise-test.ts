@@ -9,17 +9,13 @@ const {
     ok,
     notOk,
     equal,
-    notEqual,
     deepEqual,
     strictEqual,
     closeTo,
     fail,
     typeOf,
-    isNull,
     isNotNull,
-    isUndefined,
     isObject,
-    throws,
 } = assert;
 
 function test(name: string, fn: () => Promise<void>) {
@@ -33,7 +29,7 @@ async function delay<T>(val: T, millis?: number) {
     return val;
 }
 
-async function delayFail<T>(reason: any, millis?: number) {
+async function delayFail(reason: any, millis?: number) {
     await sleep(millis || 0);
     throw new Error(`reason: ${reason}`);
 }
@@ -150,7 +146,7 @@ describe('queue', () => {
         strictEqual(queue.length, 4);
         strictEqual(queue.peek(), 4);
         deepEqual(queue.contents(), [4, 9, 16, 25]);
-        queue.adjust(function(arr) {
+        queue.adjust(function (arr) {
             return [arr[3], arr[1]];
         });
         strictEqual(queue.peek(), 25);
@@ -188,6 +184,7 @@ describe('handshake', () => {
         let counter = 0;
 
         function runSleepAndCount() {
+            // tslint:disable-next-line no-floating-promises
             run(async () => {
                 await sleep(10);
                 counter++;
@@ -206,13 +203,15 @@ describe('handshake', () => {
     test('multiple wait fails', async () => {
         const hk = handshake();
         let thrown = false;
+
         function runAndWait() {
             run(async () => {
                 await hk.wait();
-            }).catch(e => {
+            }).catch(() => {
                 thrown = true;
             });
         }
+
         runAndWait();
         runAndWait();
         await sleep(10);
@@ -249,6 +248,7 @@ describe('funnel', () => {
     test('close funnel access', async () => {
         const fun = funnel(1);
         const begin = Date.now();
+        // tslint:disable-next-line no-floating-promises
         run(async () => {
             await sleep(15);
             fun.close();
@@ -366,6 +366,7 @@ describe('eventHandler', () => {
     it('outside run', done => {
         notOk(canWait());
         let sync = true;
+        // tslint:disable-next-line no-floating-promises
         eventHandler(async (arg: string) => {
             equal(arg, 'hello', 'arg ok');
             await wait<void>(cb => setTimeout(cb, 0));
@@ -375,6 +376,7 @@ describe('eventHandler', () => {
         sync = false;
     });
     it('inside run', done => {
+        // tslint:disable-next-line no-floating-promises
         run(async () => {
             let sync = true;
             ok(canWait());
@@ -399,10 +401,11 @@ describe('eventHandler', () => {
         })();
     });
     it('preserves context if already inside run', done => {
+        // tslint:disable-next-line no-floating-promises
         run(async () => {
             ok(canWait());
             const cx = {};
-            withContext(async () => {
+            await withContext(async () => {
                 eventHandler(() => {
                     equal(context(), cx);
                     done();

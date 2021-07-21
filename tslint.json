@@ -16,7 +16,7 @@
         "no-duplicate-variable": true,
         "no-empty": false,
         "no-eval": true,
-        "no-floating-promises": false, // see https://github.com/palantir/tslint/issues/2879
+        "no-floating-promises": true,
         "no-for-in-array": true,
         "no-inferred-empty-object-type": true,
         "no-invalid-template-strings": true,
