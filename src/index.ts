@@ -50,8 +50,12 @@ export async function wait<T = any>(promiseOrCallback: Promise<T> | Thunk<T>): P
 }
 
 /**
- * Start fake coroutine, with his own local storage
+ * Start fake coroutine, with its own local storage
  * @param fn
+ *
+ * Warning: May result in error "Cannot read property 'Symbol(kResourceStore)' of undefined"
+ * with node 14(.5?) at least
+ * @see https://github.com/nodejs/node/issues/34556
  */
 export async function run<T>(fn: () => Promise<T>): Promise<T> {
     if (typeof fn !== 'function') {
