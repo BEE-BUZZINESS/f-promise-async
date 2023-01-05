@@ -80,7 +80,7 @@ export async function run<T>(fn: () => Promise<T>): Promise<T> {
 ///
 /// The `funnel` function is typically used with the following pattern:
 ///
-/// ``` ts
+/// ```ts
 /// // somewhere
 /// var myFunnel = funnel(10); // create a funnel that only allows 10 concurrent executions.
 ///
