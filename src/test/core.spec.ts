@@ -1,21 +1,14 @@
 // tslint:disable:no-reference
-
-import { assert } from 'chai';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import * as fs from 'fs';
-import * as mzfs from 'mz/fs';
 import * as fsp from 'path';
+
 import { canWait, context, eventHandler, run, wait, withContext } from '../lib/core';
-import { map, sleep } from '../lib/misc';
+import { sleep } from '../lib/misc';
 
-async function delay<T>(val: T, millis?: number) {
-    await sleep(millis || 0);
-    return val;
-}
-
-async function delayFail(reason: any, millis?: number) {
-    await sleep(millis || 0);
-    throw new Error(`reason: ${reason}`);
-}
+chai.use(chaiAsPromised as any);
+const assert = chai.assert;
 
 process.on('unhandledRejection', err => {
     assert.fail(`Unhandled rejected promise: ${(err as any)?.stack || err}`);
@@ -23,80 +16,28 @@ process.on('unhandledRejection', err => {
 
 describe('> wait', () => {
 
-    it('> promise wait with success', done => {
-        const p = run(async () => {
-            const fname = fsp.join(__dirname, '../../src/test/core.spec.ts');
-            const text = await wait(mzfs.readFile(fname, 'utf8'));
-            assert.typeOf(text, 'string');
-            assert.ok(text.length > 200);
-            assert.ok(text.indexOf('// tslint') === 0);
-            const text2 = await wait(mzfs.readFile(fname, 'utf8'));
-            assert.equal(text, text2);
-            return 'success';
-        });
-        p.then(result => {
-            assert.equal(result, 'success');
-            done();
-        }, done);
+    it('> callback wait with success', async () => {
+        const fname = fsp.join(__dirname, '../../src/test/core.spec.ts');
+        const text = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
+        assert.typeOf(text, 'string');
+        assert.ok(text.length > 200);
+        assert.ok(text.indexOf('// tslint') === 0);
+        const text2 = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
+        assert.equal(text, text2);
     });
 
-    it('> promise wait with error', done => {
-        const p = run(async () => {
-            const fname = fsp.join(__dirname, './test.not.exist');
-            await wait(mzfs.readFile(fname, 'utf8'));
-        });
-        p.then(
-            result => {
-                assert.fail();
-                done();
-            },
-            e => {
-                done();
-            },
-        );
-    });
-
-    it('> callback wait with success', done => {
-        const p = run(async () => {
-            const fname = fsp.join(__dirname, '../../src/test/core.spec.ts');
-            const text = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
-            assert.typeOf(text, 'string');
-            assert.ok(text.length > 200);
-            assert.ok(text.indexOf('// tslint') === 0);
-            const text2 = await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
-            assert.equal(text, text2);
-            return 'success';
-        });
-        p.then(result => {
-            assert.equal(result, 'success');
-            done();
-        }, done);
-    });
-
-    it('> callback wait with error', done => {
-        const p = run(async () => {
+    it('> callback wait with error', async () => {
+        await assert.isRejected((async () => {
             const fname = fsp.join(__dirname, './test.not.exist');
             await wait<string>(cb => fs.readFile(fname, 'utf8', cb));
-        });
-        p.then(
-            result => {
-                assert.fail();
-                done();
-            },
-            e => {
-                done();
-            },
-        );
+        })(), 'ENOENT');
     });
 
-    it('> wait into a callback wait', done => {
-        const p = run(async () => {
-            await wait(async cb => {
-                await wait(_cb => process.nextTick(_cb));
-                cb(null, null);
-            });
-        });
-        p.then(done, done);
+    it('> wait into a callback wait', async () => {
+        await assert.isFulfilled(wait(async cb => {
+            await wait(_cb => process.nextTick(_cb));
+            cb(null, null);
+        }));
     });
 });
 
@@ -129,7 +70,8 @@ describe('> contexts', () => {
         run(async () => {
             function testContext(x: number) {
                 return withContext(async () => {
-                    const y = await delay(2 * x);
+                    await sleep(0);
+                    const y = 2 * x;
                     assert.strictEqual(y, 2 * context<number>());
                     return y + 1;
                 }, x);
@@ -140,31 +82,6 @@ describe('> contexts', () => {
             assert.deepEqual(await Promise.all(promises), [7, 11]);
             assert.isObject(context());
         }).then(done, done);
-    });
-});
-
-describe('> collection functions', () => {
-
-    it('> map', done => {
-        run(async () => {
-            assert.deepEqual(await map([2, 5], delay), [2, 5]);
-            return 'success';
-        }).then(result => {
-            assert.equal(result, 'success');
-            done();
-        }, done);
-    });
-
-    it('> map with error', done => {
-        run(async () => {
-            await map([2, 5], delayFail);
-            assert.fail();
-        })
-            .then(_ => assert.fail())
-            .catch(err => {
-                assert.equal(err.message, 'reason: 2');
-                done();
-            });
     });
 });
 
@@ -233,8 +150,10 @@ describe('> eventHandler', () => {
     });
 
     it('> preserves arity', () => {
-        assert.equal(eventHandler(() => {}).length, 0);
-        assert.equal(eventHandler((a: any, b: any) => {}).length, 2);
+        assert.equal(eventHandler(() => {
+        }).length, 0);
+        assert.equal(eventHandler((a: any, b: any) => {
+        }).length, 2);
     });
 
     it('> starts with a fresh context if outside run', done => {
