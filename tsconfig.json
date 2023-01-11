@@ -1,19 +1,29 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "target": "es2015",
-        "outDir": "build",
-        "rootDir": ".",
-        "declaration": true,
-        "sourceMap": true,
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "noImplicitReturns": true,
-        "strictNullChecks": true
-    },
-    "exclude": [
-        "node_modules",
-        "build"
+  "compileOnSave": true,
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2015",
+    "outDir": "build",
+    "declaration": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "strictNullChecks": true,
+    "types": [
+      "node",
+      "mocha"
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
     ]
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
 }
