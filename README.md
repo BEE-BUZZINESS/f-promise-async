@@ -95,7 +95,6 @@ won't be called, and no other operation will enter the funnel.
 ### Miscellaneous
 
 * [sleep](./src/lib/misc/sleep.md#sleep)
-* [map](./src/lib/misc/map.md#map)
 * [mapAsync](./src/lib/misc/map.md#mapAsync)
 * [flatMapAsync](./src/lib/misc/map.md#flatMapAsync)
 * [mapObjectAsync](./src/lib/misc/map.md#mapObjectAsync)

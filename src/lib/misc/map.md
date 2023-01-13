@@ -1,14 +1,3 @@
-## map  
-```ts  
-map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R[]>  
-```  
-Equivalent to `Promise.map` since forked from legacy `f-promise`.  
-```ts  
-const res = await map([0, 1, 2], (value) => {  
-    return value * 10;  
-});  
-console.log(res); // => [0, 10, 20]  
-```  
 ## mapAsync  
 ```ts  
 mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>): Promise<O[]>  

@@ -4,17 +4,6 @@ import { AsyncIterable, AsyncMapper } from './types';
 
 /// !doc
 
-/// ## map
-/// ```ts
-/// map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R[]>
-/// ```
-/// Equivalent to `Promise.map` since forked from legacy `f-promise`.
-/// ```ts
-/// const res = await map([0, 1, 2], (value) => {
-///     return value * 10;
-/// });
-/// console.log(res); // => [0, 10, 20]
-/// ```
 /** @deprecated Prefer to use mapAsync **/
 export async function map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R[]> {
     return Promise.all(arr.map(fn));
