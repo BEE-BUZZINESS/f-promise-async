@@ -94,11 +94,10 @@ won't be called, and no other operation will enter the funnel.
 
 ### Miscellaneous
 
-* `results = await map(collection, fn)`  
-  creates as many coroutines with `fn` as items in `collection` and wait for them to finish to return result array.
-
-* `await sleep(ms)`  
-  suspends current coroutine for `ms` milliseconds.
+* [sleep](./src/lib/misc/sleep.md#sleep)
+* [mapAsync](./src/lib/misc/map.md#mapAsync)
+* [flatMapAsync](./src/lib/misc/map.md#flatMapAsync)
+* [mapObjectAsync](./src/lib/misc/map.md#mapObjectAsync)
 
 ## Related projects
 
