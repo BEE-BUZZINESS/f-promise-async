@@ -22,7 +22,7 @@ export async function map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R
 /// });
 /// console.log(res); // => [0, 1, 4]
 /// ```
-export async function mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>): Promise<O[]> {
+export async function mapAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, mapper: AsyncMapper<Awaited<T>, O>): Promise<O[]> {
     const unwrappedIterable = await Promise.all(await iterable);
     return Promise.all(unwrappedIterable.map(mapper));
 }
@@ -38,7 +38,7 @@ export async function mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMa
 /// });
 /// console.log(res); // => [0, 1, 4]
 /// ```
-export async function flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<I, O>): Promise<O extends (infer Inner)[] ? Inner[] : O[]> {
+export async function flatMapAsync<I, O>(iterable: AsyncIterable<Awaited<I>>, mapper: AsyncMapper<Awaited<I>, O>): Promise<O extends (infer Inner)[] ? Inner[] : O[]> {
     const mapped = await mapAsync(iterable, mapper);
     // [].concat(...array) is a polyfill for array.flat()
     return ([] as O[]).concat(...mapped) as O extends (infer Inner)[] ? Inner[] : O[];

@@ -18,7 +18,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 ///     return item > 7
 /// }); // => false
 /// ```
-export async function someAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<boolean> {
+export async function someAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<boolean> {
     const unwrappedIterable = await Promise.all(await iterable);
     for (const elem of unwrappedIterable) {
         if (await predicate(elem)) {

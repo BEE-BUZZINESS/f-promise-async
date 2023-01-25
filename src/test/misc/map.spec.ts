@@ -65,7 +65,7 @@ describe('> mapAsync', () => {
 
     it('> should return values in correct order when mapping on array of Promises', async () => {
         const arr: number[] = [];
-        assert.deepEqual(await mapAsync<number, number>([Promise.resolve(2), Promise.resolve(3), Promise.resolve(5)], async (val, index) => {
+        assert.deepEqual(await mapAsync([Promise.resolve(2), Promise.resolve(3), Promise.resolve(5)], async (val, index) => {
             if (val === 2) await sleep(10);
             arr.push(val);
             return val * index;
@@ -119,7 +119,7 @@ describe('> flatMapAsync', () => {
 
     it('> should return flat values in correct order when mapping on array of Promises', async () => {
         const arr: number[] = [];
-        assert.deepEqual(await flatMapAsync<number[], number[]>([Promise.resolve([2, 3]), Promise.resolve([5])], async val => {
+        assert.deepEqual(await flatMapAsync([Promise.resolve([2, 3]), Promise.resolve([5])], async val => {
             if (val[0] === 2) await sleep(10);
             val.forEach((v: number) => arr.push(v));
             return val;

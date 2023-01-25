@@ -42,7 +42,7 @@ describe('> findAsync', () => {
 
     it('> should return first matching value on array of Promises', async () => {
         let nbLoops = 0;
-        assert.deepEqual(await findAsync<number>([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
+        assert.deepEqual(await findAsync([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
             nbLoops++;
             if (val === 1) await sleep(10);
             return val > 1;

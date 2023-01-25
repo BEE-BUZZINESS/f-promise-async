@@ -14,7 +14,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 /// });
 /// console.log(res); // => [0, 2, 4, 6]
 /// ```
-export async function filterAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<T[]> {
+export async function filterAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<Awaited<T>[]> {
     const unwrappedIterable = await Promise.all(await iterable);
     const filterResults = await Promise.all(unwrappedIterable.map(predicate));
     return unwrappedIterable.filter((elem, index) => filterResults[index]);

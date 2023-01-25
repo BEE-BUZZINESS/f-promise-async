@@ -44,7 +44,7 @@ describe('> filterAsync', () => {
 
     it('> should return values in correct order when mapping on array of Promises', async () => {
         const arr: number[] = [];
-        assert.deepEqual(await filterAsync<number>([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
+        assert.deepEqual(await filterAsync([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
             if (val === 1) await sleep(10);
             arr.push(val);
             return val !== 2;
