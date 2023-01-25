@@ -60,7 +60,7 @@ describe('> someAsync', () => {
 
     it('> should return true when predicate find a match on array of Promises', async () => {
         let nbLoop = 0;
-        assert.deepEqual(await someAsync<number>([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
+        assert.deepEqual(await someAsync([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
             nbLoop++;
             return val === 2;
         }), true);

@@ -14,7 +14,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 /// });
 /// console.log(res); // => 3
 /// ```
-export async function findAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<T | undefined> {
+export async function findAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<T | undefined> {
     const unwrappedIterable = await Promise.all(await iterable);
     for (const elem of unwrappedIterable) {
         if (await predicate(elem)) {

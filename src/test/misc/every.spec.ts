@@ -60,7 +60,7 @@ describe('> everyAsync', () => {
 
     it('> should return true when predicate match with all elements on array of Promises', async () => {
         let nbLoop = 0;
-        assert.deepEqual(await everyAsync<number>([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
+        assert.deepEqual(await everyAsync([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)], async val => {
             nbLoop++;
             return val > 0;
         }), true);
