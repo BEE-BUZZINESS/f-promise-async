@@ -7,7 +7,7 @@
         "no-unnecessary-type-assertion": true,
         "prefer-for-of": true,
         // Functionality rules
-        "await-promise": true,
+        "await-promise": [true, "PromiseLike"],
         "curly": [true, "ignore-same-line"],
         "label-position": true,
         "no-arg": true,
