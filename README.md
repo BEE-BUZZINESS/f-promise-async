@@ -104,7 +104,7 @@ won't be called, and no other operation will enter the funnel.
 
 ## Related projects
 
-* [f-streams-async](https://github.com/sberthier/f-streams-async)
+* [f-streams-async](https://github.com/BEE-BUZZINESS/f-streams-async)
 
 ## License
 
