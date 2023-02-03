@@ -10,7 +10,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "@types/chai": "4.2.9",
