@@ -4,10 +4,10 @@ import { AsyncIterable, AsyncPredicate } from './types';
 
 /// ## everyAsync
 /// ```ts
-/// everyAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<boolean>
+/// everyAsync<T>(iterable: AsyncIterable<Awaited<T>>, predicate: AsyncPredicate<T>): Promise<boolean>
 /// ```
 /// Checks if predicate (`array`, `Promise of array` or `array of Promises`) returns truthy for all element of collection.
-/// Iteration is stopped once predicate returns falsey.
+/// Sequential iteration is stopped once predicate returns falsy.
 /// Resolves a boolean.
 /// ```ts
 /// await everyAsync(Promise.resolve([0, 1, 2, 3, 4, 5, 6]), (item) => {
@@ -19,8 +19,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 /// }); // => false
 /// ```
 export async function everyAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<boolean> {
-    const unwrappedIterable = await Promise.all(await iterable);
-    for (const elem of unwrappedIterable) {
+    for await (const elem of await iterable) {
         if (!(await predicate(elem))) {
             return false;
         }

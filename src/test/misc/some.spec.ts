@@ -82,4 +82,29 @@ describe('> someAsync', () => {
             throw new Error(`err: ${val}`);
         }), 'err: 1');
     });
+
+    it('> should return true when predicate find a match on Promise of array of Promises', async () => {
+        let nbLoop = 0;
+        assert.deepEqual(await someAsync(Promise.resolve([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)]), async val => {
+            nbLoop++;
+            return val === 2;
+        }), true);
+        assert.equal(nbLoop, 2);
+    });
+
+    it('> should return false when no predicate match on Promise of array of Promises', async () => {
+        let nbLoop = 0;
+        assert.deepEqual(await someAsync(Promise.resolve([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)]), async val => {
+            nbLoop++;
+            return val === 4;
+        }), false);
+        assert.equal(nbLoop, 3);
+    });
+
+    it('> should reject if an error occurs on array Promise of of Promises', async () => {
+        await assert.isRejected(someAsync(Promise.resolve([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)]), async val => {
+            await sleep(0);
+            throw new Error(`err: ${val}`);
+        }), 'err: 1');
+    });
 });
