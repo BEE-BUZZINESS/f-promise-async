@@ -1,4 +1,4 @@
-export * from './sleep';
+export * from './timer';
 export * from './map';
 export * from './filter';
 export * from './some';

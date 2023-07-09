@@ -2,7 +2,7 @@ import { assert } from 'chai';
 
 import { run } from '../lib/core';
 import { handshake } from '../lib/handshake';
-import { sleep } from '../lib/misc/sleep';
+import { sleep } from '../lib/misc/timer';
 
 describe('> handshake', () => {
 
