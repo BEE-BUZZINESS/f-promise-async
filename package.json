@@ -27,7 +27,6 @@
     "eslint-plugin-import": "^2.26.0",
     "mocha": "^10.2.0",
     "mz": "^2.7.0",
-    "source-map-support": "^0.5.21",
     "typescript": "^4.9.4"
   },
   "keywords": [
@@ -42,7 +41,7 @@
     "prepare": "npm run compile",
     "compile": "rm -rf build && tsc",
     "compile-watch": "tsc -w",
-    "test": "mocha --async-stack-traces --full-trace --recursive --require source-map-support/register 'build/test/**/*.spec.js' ",
+    "test": "mocha --async-stack-traces --full-trace --recursive -n enable-source-maps 'build/test/**/*.spec.js' ",
     "lint": "eslint 'src/**/*.ts'"
   }
 }
