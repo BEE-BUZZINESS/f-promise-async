@@ -59,7 +59,7 @@ export function funnel(max = -1): Funnel {
         queue.push(hk);
         await hk.wait();
         if (closed) {
-            throw new Error(`cannot execute: funnel has been closed`);
+            throw new Error('cannot execute: funnel has been closed');
         }
         // A success is not sure, the entry ticket may have already be taken by another,
         // so this one may still be delayed by re-entering in overflow().
@@ -68,7 +68,7 @@ export function funnel(max = -1): Funnel {
 
     const fun = function<T>(fn: () => Promise<T>): Promise<T> {
         if (closed) {
-            throw new Error(`cannot execute: funnel has been closed`);
+            throw new Error('cannot execute: funnel has been closed');
         }
         if (_max < 0 || _max === Infinity) {
             return fn();

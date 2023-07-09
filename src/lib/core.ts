@@ -13,7 +13,7 @@ let runIdCounter = 0;
 export type Callback<T> = (err: any, result?: T) => void;
 export type Thunk<T> = (cb: Callback<T>) => void;
 
-// tslint:disable-next-line:variable-name
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export let PromiseConstructor = Promise;
 export function setPromiseConstructor(f: PromiseConstructor) {
     PromiseConstructor = f;

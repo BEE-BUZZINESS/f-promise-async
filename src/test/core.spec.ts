@@ -125,7 +125,7 @@ describe('> eventHandler', () => {
         assert.notOk(canWait());
         let sync = true;
         // tslint:disable-next-line no-floating-promises
-        eventHandler(async (arg: string) => {
+        void eventHandler(async (arg: string) => {
             assert.equal(arg, 'hello', 'arg assert.ok');
             await wait<void>(cb => setTimeout(cb, 0));
             assert.equal(sync, false, 'new fiber');
@@ -136,7 +136,7 @@ describe('> eventHandler', () => {
 
     it('> inside run', done => {
         // tslint:disable-next-line no-floating-promises
-        run(async () => {
+        void run(async () => {
             let sync = true;
             assert.ok(canWait());
             await eventHandler(async (arg: string) => {
@@ -166,7 +166,7 @@ describe('> eventHandler', () => {
 
     it('> preserves context if already inside run', done => {
         // tslint:disable-next-line no-floating-promises
-        run(async () => {
+        void run(async () => {
             assert.ok(canWait());
             const cx = {};
             await withContext(async () => {

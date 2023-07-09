@@ -18,7 +18,7 @@ describe('> handshake', () => {
 
         function runSleepAndCount() {
             // tslint:disable-next-line no-floating-promises
-            run(async () => {
+            void run(async () => {
                 await sleep(10);
                 counter++;
                 hk.notify();
