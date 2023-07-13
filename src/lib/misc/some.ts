@@ -19,7 +19,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 /// }); // => false
 /// ```
 export async function someAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<boolean> {
-    for await (const elem of await iterable) {
+    for await (const elem of await iterable || []) {
         if (await predicate(elem)) {
             return true;
         }

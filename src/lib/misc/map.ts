@@ -24,7 +24,7 @@ export async function map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R
 /// console.log(res); // => [0, 1, 4]
 /// ```
 export async function mapAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, mapper: AsyncMapper<Awaited<T>, O>, options?: ConcurrencyOptions): Promise<O[]> {
-    const unwrappedIterable = await Promise.all(await iterable);
+    const unwrappedIterable = await Promise.all(await iterable || []);
     if ((options?.concurrency || 0) > 0) {
         const fun = funnel(options?.concurrency);
         return Promise.all(unwrappedIterable.map(async (elem, index) => {

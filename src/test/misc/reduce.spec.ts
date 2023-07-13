@@ -75,4 +75,24 @@ describe('> reduceAsync', () => {
             throw new Error(`err: ${val}`);
         }, 0), 'err: 2');
     });
+
+    it('> should accept undefined as argument despite type', async () => {
+        let nbLoop = 0;
+        assert.isTrue(await reduceAsync(undefined as unknown as [], async acc => {
+            await sleep(1);
+            nbLoop++;
+            return acc;
+        }, true));
+        assert.equal(nbLoop, 0);
+    });
+
+    it('> should accept null as argument despite type', async () => {
+        let nbLoop = 0;
+        assert.isTrue(await reduceAsync(null as unknown as [], async acc => {
+            await sleep(1);
+            nbLoop++;
+            return acc;
+        }, true));
+        assert.equal(nbLoop, 0);
+    });
 });
