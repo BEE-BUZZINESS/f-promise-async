@@ -96,6 +96,7 @@ won't be called, and no other operation will enter the funnel.
 
 * [sleep](./src/lib/misc/timer.md#sleep)
 * [waitTimeout](./src/lib/misc/timer.md#waitTimeout)
+* [eachAsync](./src/lib/misc/each.md#eachAsync)
 * [mapAsync](./src/lib/misc/map.md#mapAsync)
 * [flatMapAsync](./src/lib/misc/map.md#flatMapAsync)
 * [mapObjectAsync](./src/lib/misc/map.md#mapObjectAsync)
