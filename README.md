@@ -104,6 +104,7 @@ won't be called, and no other operation will enter the funnel.
 * [filterAsync](./src/lib/misc/filter.md#filterAsync)
 * [someAsync](./src/lib/misc/some.md#someAsync)
 * [everyAsync](./src/lib/misc/every.md#everyAsync)
+* [parallelAsync](./src/lib/misc/parallel.md#parallelAsync)
 
 ## Related projects
 
