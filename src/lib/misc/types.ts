@@ -1,3 +1,7 @@
+export type ConcurrencyOptions = {
+    concurrency: number;
+};
+
 export type AsyncIterable<T> = Promise<T>[] | Promise<T[]> | T[];
 
 export type AsyncPredicate<T> = (elem: T) => boolean | Promise<boolean>;

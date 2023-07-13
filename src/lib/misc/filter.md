@@ -2,7 +2,8 @@
 ```ts  
 filterAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<T[]>  
 ```  
-Filter iterable (`array`, `Promise of array` or `array of Promises`) elements using predicate function.  
+Filter iterable (`array`, `Promise of array` or `array of Promises`) elements using predicate function.
+All elements are processed in parallel. Possible to restrict concurrency with options.concurrency.
 Resolves with filtered array.  
 ```ts  
 const res = await filterAsync(Promise.resolve([0, 1, 2, 3, 4, 5, 6]), (item) => {  
