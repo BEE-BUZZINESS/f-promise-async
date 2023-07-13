@@ -17,7 +17,7 @@ import { AsyncIterable, AsyncPredicate, ConcurrencyOptions } from './types';
 /// console.log(res); // => [0, 2, 4, 6]
 /// ```
 export async function filterAsync<T>(iterable: AsyncIterable<Awaited<T>>, predicate: AsyncPredicate<Awaited<T>>, options?: ConcurrencyOptions): Promise<Awaited<T>[]> {
-    const unwrappedIterable = await Promise.all(await iterable);
+    const unwrappedIterable = await Promise.all(await iterable || []);
     let filterResults: boolean[] = [];
     if ((options?.concurrency || 0) > 0) {
         const fun = funnel(options?.concurrency);

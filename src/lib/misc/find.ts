@@ -15,7 +15,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 /// console.log(res); // => 3
 /// ```
 export async function findAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<T | undefined> {
-    for await (const elem of await iterable) {
+    for await (const elem of await iterable || []) {
         if (await predicate(elem)) {
             return elem;
         }

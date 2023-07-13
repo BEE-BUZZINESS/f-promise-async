@@ -18,7 +18,7 @@ import { AsyncIterable, AsyncReducer } from './types';
 export async function reduceAsync<T, O>(iterable: AsyncIterable<T>, reducer: AsyncReducer<Awaited<T>, O>, accumulator: O): Promise<O> {
     let acc = accumulator;
     let index = 0;
-    for await (const elem of await iterable) {
+    for await (const elem of await iterable || []) {
         acc = await reducer(acc, elem, index++);
     }
     return acc;

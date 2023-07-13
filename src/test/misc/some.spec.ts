@@ -107,4 +107,24 @@ describe('> someAsync', () => {
             throw new Error(`err: ${val}`);
         }), 'err: 1');
     });
+
+    it('> should accept undefined as argument despite type', async () => {
+        let nbLoop = 0;
+        assert.isFalse(await someAsync(undefined as unknown as [], async () => {
+            await sleep(1);
+            nbLoop++;
+            return true;
+        }));
+        assert.equal(nbLoop, 0);
+    });
+
+    it('> should accept null as argument despite type', async () => {
+        let nbLoop = 0;
+        assert.isFalse(await someAsync(null as unknown as [], async () => {
+            await sleep(1);
+            nbLoop++;
+            return true;
+        }));
+        assert.equal(nbLoop, 0);
+    });
 });
