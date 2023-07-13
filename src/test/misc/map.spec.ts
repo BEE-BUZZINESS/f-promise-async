@@ -79,6 +79,43 @@ describe('> mapAsync', () => {
             throw new Error(`err: ${val}`);
         }), 'err: 2');
     });
+
+    describe('> limit concurrency', () => {
+
+        it('> should return values in correct order with concurrency 1', async () => {
+            const arr: number[] = [];
+            assert.deepEqual(await mapAsync([2, 3, 5], async (val, index) => {
+                if (val === 2) await sleep(10);
+                arr.push(val);
+                return val * index;
+            }, { concurrency: 1 }), [0, 3, 10]);
+            assert.deepEqual(arr, [2, 3, 5]);
+        });
+
+        it('> should return values in correct order with concurrency 2', async () => {
+            const arr: number[] = [];
+            const beginDate = Date.now();
+            assert.deepEqual(await mapAsync(Promise.resolve(new Array(8)), async (val, index) => {
+                if (index % 2 === 0) await sleep(10);
+                arr.push(index);
+                return index;
+            }, { concurrency: 2 }), [0, 1, 2, 3, 4, 5, 6, 7]);
+            assert.notDeepEqual(arr, [0, 1, 2, 3, 4, 5, 6, 7]);
+            assert.isBelow(Date.now() - beginDate, 25); // 4 sleep with 2 concurrently, theoretically 20ms
+        });
+
+        it('> should return values in correct order with concurrency 3', async () => {
+            const arr: number[] = [];
+            const beginDate = Date.now();
+            assert.deepEqual(await mapAsync(new Array(9).map(() => Promise.resolve()), async (val, index) => {
+                if (index % 3 === 0) await sleep(10);
+                arr.push(index);
+                return index;
+            }, { concurrency: 3 }), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+            assert.notDeepEqual(arr, [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+            assert.isBelow(Date.now() - beginDate, 15); // 3 sleep with 3 concurrently, theoretically 10ms
+        });
+    });
 });
 
 describe('> flatMapAsync', () => {
@@ -91,6 +128,16 @@ describe('> flatMapAsync', () => {
             return val;
         }), [2, 3, 5]);
         assert.deepEqual(arr, [5, 2, 3]);
+    });
+
+    it('> should return flat values in correct order with concurrency 1', async () => {
+        const arr: number[] = [];
+        assert.deepEqual(await flatMapAsync([[2, 3], [5]], async val => {
+            if (val[0] === 2) await sleep(10);
+            val.forEach((v: number) => arr.push(v));
+            return val;
+        }, { concurrency: 1}), [2, 3, 5]);
+        assert.deepEqual(arr, [2, 3, 5]);
     });
 
     it('> should reject if an error occurs', async () => {
@@ -142,6 +189,16 @@ describe('> mapObjectAsync', () => {
             if (val === 2) await sleep(10);
             return val;
         }), [2, 5]);
+    });
+
+    it('> should return values in correct order with concurrency 1', async () => {
+        const arr: number[] = [];
+        assert.deepEqual(await mapObjectAsync({ a: 2, b: 3, c: 5 }, async (val, key) => {
+            if (val === 2) await sleep(10);
+            arr.push(val);
+            return val;
+        }, { concurrency: 1 }), [2, 3, 5]);
+        assert.deepEqual(arr, [2, 3, 5]);
     });
 
     it('> should reject if an error occurs', async () => {

@@ -1,9 +1,9 @@
 ## mapAsync  
 ```ts  
-mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>): Promise<O[]>  
+mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>, options?: ConcurrencyOptions): Promise<O[]>  
 ```  
 Map all iterable (`array`, `Promise of array` or `array of Promises`) elements using mapper function.  
-All elements are processed in parallel.  
+All elements are processed in parallel. Possible to restrict concurrency with options.concurrency.
 Resolves with mapped array.  
 ```ts  
 const res = await mapAsync(Promise.resolve([0, 1, 2]), (value, index) => {  
@@ -13,7 +13,7 @@ console.log(res); // => [0, 1, 4]
 ```  
 ## flatMapAsync  
 ```ts  
-flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<I, O>): Promise<O extends (infer Inner)[] ? Inner[] : O[]>  
+flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<I, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]>  
 ```  
 Same as mapAsync but resolves a flatten array.  
 ```ts  
@@ -24,7 +24,7 @@ console.log(res); // => [0, 1, 4]
 ```  
 ## mapObjectAsync  
 ```ts  
-mapObjectAsync<T, R>(object: { [key: string]: T }, mapper: (value: T, key: string, index: number) => Promise<R> | R): Promise<R[]>  
+mapObjectAsync<T, R>(object: { [key: string]: T }, mapper: (value: T, key: string, index: number) => Promise<R> | R, options?: ConcurrencyOptions): Promise<R[]>  
 ```  
 Process each first level object keys and use mapper function to produce array.  
 First level object values must all have the same type.  
