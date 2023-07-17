@@ -8,6 +8,13 @@ const assert = chai.assert;
 
 describe('> everyAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[]): Promise<boolean> {
+            return everyAsync(array, async () => true);
+        }
+        await testGenerics<number>([1, 2, 3]);
+    });
+
     it('> should return true when predicate match with all elements', async () => {
         let nbLoop = 0;
         assert.deepEqual(await everyAsync([1, 2, 3], async val => {

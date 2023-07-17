@@ -12,7 +12,7 @@ export async function map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R
 
 /// ## mapAsync
 /// ```ts
-/// mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>, options?: ConcurrencyOptions): Promise<O[]>
+/// mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<AwaitedT>, O>, options?: ConcurrencyOptions): Promise<O[]>
 /// ```
 /// Map all iterable (`array`, `Promise of array` or `array of Promises`) elements using mapper function.
 /// All elements are processed in parallel. Possible to restrict concurrency with options.concurrency.
@@ -23,7 +23,7 @@ export async function map<T, R>(arr: T[], fn: (val: T) => Promise<R>): Promise<R
 /// });
 /// console.log(res); // => [0, 1, 4]
 /// ```
-export async function mapAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, mapper: AsyncMapper<Awaited<T>, O>, options?: ConcurrencyOptions): Promise<O[]> {
+export async function mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<Awaited<T>, O>, options?: ConcurrencyOptions): Promise<O[]> {
     const unwrappedIterable = await Promise.all(await iterable || []);
     if ((options?.concurrency || 0) > 0) {
         const fun = funnel(options?.concurrency);
@@ -36,7 +36,7 @@ export async function mapAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, mapper
 
 /// ## flatMapAsync
 /// ```ts
-/// flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<I, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]>
+/// flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<AwaitedI>, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]>
 /// ```
 /// Same as mapAsync but resolves a flatten array.
 /// ```ts
@@ -45,7 +45,7 @@ export async function mapAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, mapper
 /// });
 /// console.log(res); // => [0, 1, 4]
 /// ```
-export async function flatMapAsync<I, O>(iterable: AsyncIterable<Awaited<I>>, mapper: AsyncMapper<Awaited<I>, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]> {
+export async function flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<Awaited<I>, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]> {
     const mapped = await mapAsync(iterable, mapper, options);
     // [].concat(...array) is a polyfill for array.flat()
     return ([] as O[]).concat(...mapped) as O extends (infer Inner)[] ? Inner[] : O[];

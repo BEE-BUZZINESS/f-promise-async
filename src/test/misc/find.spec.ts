@@ -8,6 +8,13 @@ const assert = chai.assert;
 
 describe('> findAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[]): Promise<T | undefined> {
+            return findAsync(array, async val => !!val);
+        }
+        await testGenerics([1, 2, 3]);
+    });
+
     it('> should return first matching value', async () => {
         let nbLoops = 0;
         assert.deepEqual(await findAsync([1, 2, 3], async val => {

@@ -9,6 +9,13 @@ const assert = chai.assert;
 
 describe('> eachAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[]): Promise<void> {
+            await eachAsync(array, async () => undefined);
+        }
+        await testGenerics<number>([1, 2, 3]);
+    });
+
     it('> should iterate with all elements on Promise of array', async () => {
         let nbLoop = 0;
         await eachAsync([1, 2, 3], async (val, index) => {

@@ -1,6 +1,6 @@
 ## mapAsync  
 ```ts  
-mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<T, O>, options?: ConcurrencyOptions): Promise<O[]>  
+mapAsync<T, O>(iterable: AsyncIterable<T>, mapper: AsyncMapper<Awaited<T>, O>, options?: ConcurrencyOptions): Promise<O[]>  
 ```  
 Map all iterable (`array`, `Promise of array` or `array of Promises`) elements using mapper function.  
 All elements are processed in parallel. Possible to restrict concurrency with options.concurrency.
@@ -13,7 +13,7 @@ console.log(res); // => [0, 1, 4]
 ```  
 ## flatMapAsync  
 ```ts  
-flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<I, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]>  
+flatMapAsync<I, O>(iterable: AsyncIterable<I>, mapper: AsyncMapper<Awaited<I>, O>, options?: ConcurrencyOptions): Promise<O extends (infer Inner)[] ? Inner[] : O[]>  
 ```  
 Same as mapAsync but resolves a flatten array.  
 ```ts  

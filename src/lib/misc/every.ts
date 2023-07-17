@@ -4,7 +4,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 
 /// ## everyAsync
 /// ```ts
-/// everyAsync<T>(iterable: AsyncIterable<Awaited<T>>, predicate: AsyncPredicate<T>): Promise<boolean>
+/// everyAsync<T>(iterable: AsyncIterable<Awaited<T>>, predicate: AsyncPredicate<Awaited<T>>): Promise<boolean>
 /// ```
 /// Checks if predicate (`array`, `Promise of array` or `array of Promises`) returns truthy for all element of collection.
 /// Sequential iteration is stopped once predicate returns falsy.

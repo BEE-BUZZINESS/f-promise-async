@@ -5,7 +5,7 @@ import { ArrayIterator, AsyncIterable, AsyncMapper, ConcurrencyOptions } from '.
 
 /// ## eachAsync
 /// ```ts
-/// eachAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, iteratee: ArrayIterator<Awaited<T>>): Promise<void>
+/// eachAsync<T, O>(iterable: AsyncIterable<T>, iteratee: ArrayIterator<Awaited<T>>): Promise<void>
 /// ```
 /// Sequentially iterate over (`array`, `Promise of array` or `array of Promises`) elements using iteratee function.
 /// The iteratee function can return true to stop iterate.
@@ -14,7 +14,7 @@ import { ArrayIterator, AsyncIterable, AsyncMapper, ConcurrencyOptions } from '.
 ///     console.log(value, index);
 /// });
 /// ```
-export async function eachAsync<T, O>(iterable: AsyncIterable<Awaited<T>>, iteratee: ArrayIterator<Awaited<T>>): Promise<void> {
+export async function eachAsync<T>(iterable: AsyncIterable<T>, iteratee: ArrayIterator<Awaited<T>>): Promise<void> {
     let i = 0;
     for await (const elem of await iterable || []) {
         const stopIterate = await iteratee(elem, i++);
