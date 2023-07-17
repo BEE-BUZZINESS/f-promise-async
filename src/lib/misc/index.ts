@@ -1,4 +1,6 @@
 export * from './timer';
+export * from './parallel';
+export * from './each';
 export * from './map';
 export * from './reduce';
 export * from './filter';
