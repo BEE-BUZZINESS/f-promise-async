@@ -1,6 +1,6 @@
 ## filterAsync  
 ```ts  
-filterAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<T[]>  
+filterAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>, options?: ConcurrencyOptions): Promise<Awaited<T>[]>  
 ```  
 Filter iterable (`array`, `Promise of array` or `array of Promises`) elements using predicate function.
 All elements are processed in parallel. Possible to restrict concurrency with options.concurrency.

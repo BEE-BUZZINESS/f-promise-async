@@ -8,6 +8,13 @@ const assert = chai.assert;
 
 describe('> filterAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[]): Promise<T[]> {
+            return filterAsync(array, async val => !!val);
+        }
+        assert.deepEqual(await testGenerics<number>([1, 2, 3]), [1, 2, 3]);
+    });
+
     it('> should return values in correct order', async () => {
         const arr: number[] = [];
         assert.deepEqual(await filterAsync([1, 2, 3], async val => {
@@ -87,7 +94,7 @@ describe('> filterAsync', () => {
                 if (val === 1) await sleep(10);
                 arr.push(val);
                 return val !== 2;
-            }, { concurrency: 1}), [1, 3]);
+            }, { concurrency: 1 }), [1, 3]);
             assert.deepEqual(arr, [1, 2, 3]);
         });
 

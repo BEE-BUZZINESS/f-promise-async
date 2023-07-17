@@ -8,6 +8,13 @@ const assert = chai.assert;
 
 describe('> reduceAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T extends number>(array: T[]): Promise<unknown> {
+            return reduceAsync(array, async acc => acc, 0);
+        }
+        await testGenerics<number>([1, 2, 3]);
+    });
+
     it('> should reduce value sequentially', async () => {
         const arr: number[] = [];
         assert.deepEqual(await reduceAsync([2, 3, 5], async (sum, val) => {

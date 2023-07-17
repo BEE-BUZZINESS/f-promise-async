@@ -4,7 +4,7 @@ import { AsyncIterable, AsyncPredicate } from './types';
 
 /// ## findAsync
 /// ```ts
-/// findAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<T> | undefined
+/// findAsync<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<Awaited<T>>): Promise<T> | undefined
 /// ```
 /// Sequentially iterates over elements of iterable (`array`, `Promise of array` or `array of Promises`).
 /// Resolves the first element that returns truthy for elements using predicate function.

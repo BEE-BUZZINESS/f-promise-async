@@ -29,6 +29,13 @@ describe('> map', () => {
 
 describe('> mapAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[]): Promise<T[]> {
+            return mapAsync(array, async val => val);
+        }
+        assert.deepEqual(await testGenerics<number>([1, 2, 3]), [1, 2, 3]);
+    });
+
     it('> should return values in correct order', async () => {
         const arr: number[] = [];
         assert.deepEqual(await mapAsync([2, 3, 5], async (val, index) => {
@@ -140,6 +147,13 @@ describe('> mapAsync', () => {
 
 describe('> flatMapAsync', () => {
 
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: T[][]): Promise<T[]> {
+            return flatMapAsync(array, async val => val);
+        }
+        assert.deepEqual(await testGenerics<number>([[1], [2], [3]]), [1, 2, 3]);
+    });
+
     it('> should return flat values in correct order', async () => {
         const arr: number[] = [];
         assert.deepEqual(await flatMapAsync([[2, 3], [5]], async val => {
@@ -156,7 +170,7 @@ describe('> flatMapAsync', () => {
             if (val[0] === 2) await sleep(10);
             val.forEach((v: number) => arr.push(v));
             return val;
-        }, { concurrency: 1}), [2, 3, 5]);
+        }, { concurrency: 1 }), [2, 3, 5]);
         assert.deepEqual(arr, [2, 3, 5]);
     });
 
@@ -223,6 +237,13 @@ describe('> flatMapAsync', () => {
 });
 
 describe('> mapObjectAsync', () => {
+
+    it('> should be correctly typed for generics', async () => {
+        async function testGenerics<T>(array: { [key: string]: T }): Promise<T[]> {
+            return mapObjectAsync(array, async val => val);
+        }
+        assert.deepEqual(await testGenerics<number>({ a: 1, b: 2, c: 3 }), [1, 2, 3]);
+    });
 
     it('> should return values in correct order', async () => {
         assert.deepEqual(await mapObjectAsync({ a: 2, b: 5 }, async (val, key) => {
