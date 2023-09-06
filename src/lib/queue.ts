@@ -37,6 +37,7 @@ export class Queue<T> {
                 });
                 if (this._pendingWrites.length > 0) {
                     const wr = this._pendingWrites.shift();
+                    this._q.push(wr?.[1]);
                     setImmediate(() => {
                         wr && wr[0](this._err, wr[1]);
                     });
