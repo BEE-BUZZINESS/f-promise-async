@@ -59,4 +59,24 @@ describe('> queue', () => {
         await wait(consumer1);
         assert.equal((await wait(consumer2)).message, 'already getting');
     });
+
+    it('> queue should read element in write order when write are pending (max length)', async () => {
+        const queue = new Queue<number>(1);
+
+        void queue.write(1);
+        void queue.write(2);
+        void queue.write(3);
+        void queue.write(4);
+        void queue.write(5);
+
+        assert.equal(queue._pendingWrites.length, 4);
+
+        assert.deepEqual([
+            await queue.read(),
+            await queue.read(),
+            await queue.read(),
+            await queue.read(),
+            await queue.read(),
+        ], [1, 2, 3, 4, 5]);
+    });
 });
